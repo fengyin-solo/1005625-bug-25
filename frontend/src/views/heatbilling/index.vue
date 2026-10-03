@@ -67,6 +67,58 @@
       <span>共 {{ total }} 条热费结算记录</span>
       <span v-if="errorMessage" class="error-text">{{ errorMessage }}</span>
     </footer>
+
+    <section class="review-panel">
+      <header class="review-head">
+        <div>
+          <h3>抄表核对待复核清单</h3>
+          <p class="page-desc">热计量抄表的核对结果落在这里，复核通过后归档；同一表同一周期重复提交只记一次。</p>
+        </div>
+        <button class="btn" type="button" @click="loadReview">刷新清单</button>
+      </header>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>来源</th>
+            <th>计量表号</th>
+            <th>用户名称</th>
+            <th>结算周期</th>
+            <th>累计热量</th>
+            <th>核对结果</th>
+            <th>状态</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in reviewItems" :key="item.id">
+            <td>{{ item.source }}</td>
+            <td>{{ item.meterNo }}</td>
+            <td>{{ item.userName }}</td>
+            <td>{{ item.period }}</td>
+            <td>{{ item.heat }}</td>
+            <td>{{ item.result }}</td>
+            <td>{{ item.status }}</td>
+            <td>
+              <button
+                v-if="item.status === '待复核'"
+                class="link"
+                type="button"
+                @click="passReview(item.id)"
+              >
+                复核通过
+              </button>
+              <span v-else>—</span>
+            </td>
+          </tr>
+          <tr v-if="!reviewItems.length">
+            <td colspan="8" class="empty-state">暂无待复核的抄表核对结果</td>
+          </tr>
+        </tbody>
+      </table>
+      <footer class="page-foot">
+        <span>待复核 {{ pendingReviewCount }} 条 · 共 {{ reviewItems.length }} 条</span>
+      </footer>
+    </section>
   </section>
 </template>
 
@@ -76,10 +128,12 @@ import { computed, onMounted, ref } from 'vue'
 import {
   downloadEntries,
   listEntries,
+  listSettlementReview,
   moduleMeta,
   runAction as applyAction,
+  settleReviewItem,
 } from '@/api/local-service'
-import type { EntryRow } from '@/data/types'
+import type { EntryRow, ReviewItem } from '@/data/types'
 
 const meta = moduleMeta('heatbilling')
 const columns = ["结算编号", "用户名称", "用热面积", "热价标准", "应缴金额", "缴费日期", "收费员", "结算状态"]
@@ -92,12 +146,25 @@ const total = ref(0)
 const errorMessage = ref('')
 const filters = ref<Record<string, string>>({})
 const filterFields = columns.slice(0, 3)
+const reviewItems = ref<ReviewItem[]>([])
+const pendingReviewCount = computed(
+  () => reviewItems.value.filter((item) => item.status === '待复核').length,
+)
 const statusSummary = computed(() =>
   statuses.map((status: string) => ({
     status,
     count: rows.value.filter((row) => String(row.status) === status).length,
   })),
 )
+
+function loadReview() {
+  reviewItems.value = [...listSettlementReview()]
+}
+
+function passReview(id: number) {
+  settleReviewItem(id)
+  loadReview()
+}
 
 function resetFilters() {
   filters.value = {}
@@ -133,5 +200,8 @@ function reload() {
   }
 }
 
-onMounted(reload)
+onMounted(() => {
+  reload()
+  loadReview()
+})
 </script>

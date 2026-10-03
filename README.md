@@ -68,4 +68,6 @@ npm run build
 - 字段、状态、动作与流转目标集中在 `frontend/src/data/modules.ts`；示例数据在
   `frontend/src/data/seed.ts`。
 - 状态流转只允许在 `local-service.ts` 里改，页面组件不做业务判断。
+- 热计量抄表的分页、去重（表号+结算周期）、累计热量合计在 `frontend/src/data/meter-readings.ts`；
+  结算侧的抄表核对待复核清单在 `frontend/src/data/review-queue.ts`，读写同样经 `local-service.ts`。
 - 想回到初始数据：清掉浏览器里 `district-heating:entries` 这一项，或调用 `resetModule(模块)`。
