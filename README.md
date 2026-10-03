@@ -68,4 +68,9 @@ npm run build
 - 字段、状态、动作与流转目标集中在 `frontend/src/data/modules.ts`；示例数据在
   `frontend/src/data/seed.ts`。
 - 状态流转只允许在 `local-service.ts` 里改，页面组件不做业务判断。
+- 热计量抄表的分页查询走 `listEntriesPage`：先筛选再翻页，两次取的是同一份数据；
+  页码或每页条数缺失会被服务层直接挡下。
+- 抄表登记/重交按「计量表号 + 结算周期」合并，同一块表同一周期只记一次；
+  「确认核对」会把结果落到热费结算的待复核清单（结算编号 `JS-抄表编号`，重复核对不重复建单）。
+- 浏览器里的数据带版本号（`district-heating:entries`），种子结构升级时旧数据自动重播为新种子。
 - 想回到初始数据：清掉浏览器里 `district-heating:entries` 这一项，或调用 `resetModule(模块)`。

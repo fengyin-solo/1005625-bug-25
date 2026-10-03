@@ -24,6 +24,26 @@
       </span>
     </p>
 
+    <div v-if="reviewRows.length" class="panel review-panel">
+      <h3>待复核清单（含抄表核对转入）</h3>
+      <p class="panel-desc">
+        共 {{ reviewRows.length }} 条待复核；抄表侧「确认核对」后会落到这里，复核无误再提交核算。
+      </p>
+      <table class="data-table">
+        <thead>
+          <tr><th>结算编号</th><th>用户名称</th><th>应缴金额</th><th>收费员</th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in reviewRows" :key="String(item.id)">
+            <td>{{ item['结算编号'] }}</td>
+            <td>{{ item['用户名称'] }}</td>
+            <td>{{ item['应缴金额'] }}</td>
+            <td>{{ item['收费员'] || '—' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
     <form class="filter-bar" @submit.prevent="reload">
       <label v-for="field in filterFields" :key="field" class="filter-item">
         <span>{{ field }}</span>
@@ -92,6 +112,8 @@ const total = ref(0)
 const errorMessage = ref('')
 const filters = ref<Record<string, string>>({})
 const filterFields = columns.slice(0, 3)
+// 待复核清单看的是全量待核算单，不随筛选条件收缩，避免漏单。
+const reviewRows = ref<EntryRow[]>([])
 const statusSummary = computed(() =>
   statuses.map((status: string) => ({
     status,
@@ -128,6 +150,7 @@ function reload() {
     const payload = listEntries(meta.key, filters.value)
     rows.value = payload.items
     total.value = payload.total
+    reviewRows.value = listEntries(meta.key).items.filter((row) => String(row.status) === '待核算')
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '热费结算列表读取失败'
   }
